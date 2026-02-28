@@ -1,0 +1,13 @@
+[project]
+name = "honoursproject"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "langchain>=1.2.10",
+    "langgraph>=1.0.10",
+    "matplotlib>=3.10.8",
+    "pandas>=3.0.1",
+    "seaborn>=0.13.2",
+]
