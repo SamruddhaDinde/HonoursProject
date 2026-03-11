@@ -1,3 +1,10 @@
-langchain
 langgraph
+langchain
+langchain-groq
+langchain-community
+langchain-tavily
+python-dotenv
+pydantic
+wikipedia  
+xmltodict 
 langsmith
