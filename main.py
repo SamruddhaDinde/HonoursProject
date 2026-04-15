@@ -11,7 +11,7 @@ from evaluation.evaluator import Evaluator
 load_dotenv()
 
 MODEL = "llama3.1:8b"
-N_SAMPLES = 10  # keep small while testing
+N_SAMPLES = 100  # keep small while testing
 COMMUNICATION_MODE = "output_only"
 
 async def run_pipeline(question: str) -> tuple[str, str]:
