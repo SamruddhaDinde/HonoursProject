@@ -11,3 +11,10 @@ wheels/
 
 # Environment variables
 .env
+
+Projects/
+
+python_packages/
+
+*.sif
+
