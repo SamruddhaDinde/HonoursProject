@@ -15,6 +15,7 @@ wheels/
 Projects/
 
 python_packages/
+wandb/
 
 *.sif
-
+*.log

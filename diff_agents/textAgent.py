@@ -2,12 +2,13 @@ from agents import Agent, AsyncOpenAI, OpenAIChatCompletionsModel
 import asyncio
 import os
 from dotenv import load_dotenv
+os.environ["OPENAI_TRACING_DISABLED"] = "true"
 
 load_dotenv()
 
 ollama_client = AsyncOpenAI(
     base_url =os.getenv("OPENAI_BASE_URL","http://localhost:11434/v1"),
-    api_key = os.getenv("OPENAI_API_KEY", "ollama")
+    #api_key = os.getenv("OPENAI_API_KEY", "ollama")
 )
 
 text_agent = Agent(

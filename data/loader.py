@@ -4,9 +4,9 @@ import os
 
 def load_medqa(split: str="test", n_samples: int = 10):
     ds = load_dataset(
-        "bigbio/med_qa",
-        "med_qa_en_source",
-        trust_remote_code=True,
+        "GBaker/MedQA-USMLE-4-options",
+        #"med_qa_en_source",
+        #trust_remote_code=True,
         token =os.getenv("HF_TOKEN")
     )
 
