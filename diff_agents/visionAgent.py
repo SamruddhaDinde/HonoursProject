@@ -11,17 +11,17 @@ ollama_client = AsyncOpenAI(
     #api_key = os.getenv("OPENAI_API_KEY", "ollama")
 )
 
-text_agent = Agent(
-    name="Clinical Text Analyst",
-    instructions = """ ou are an experienced clinical physician.
-You will be given a medical question without any images.
-Reason purely from clinical knowledge to answer.
-Respond in this exact format:
-ANSWER: <YES or NO>
-REASONING: <your clinical reasoning in 2-3 sentences>
+vision_agent = Agent(
+    name="Radiology Vision Analyst",
+    instructions = """ You are an experienced radiologist.
+    You will be given a medical image and a clinical question about it.
+    Analyze the question carefully and Answer the question.
+    Respond in this exact format:
+    Answer: <YES or No>
+    Reasoning: <what you observed in the image that led to this answer in 2-3 sentences>
 """,
     model= OpenAIChatCompletionsModel(
-        model = "llama3.1:8b",
+        model = "llava:7b",
         openai_client=ollama_client
     )
 )

@@ -2,8 +2,8 @@ import wandb
 import re
 
 def extract_answer(response_text: str) -> str:
-    """Pull the letter answer out of agent response."""
-    match = re.search(r"ANSWER:\s*([A-E])", response_text, re.IGNORECASE)
+    """Pull YES or NO out of agent response."""
+    match = re.search(r"ANSWER:\s*(YES|NO)", response_text, re.IGNORECASE)
     if match:
         return match.group(1).upper()
     return "UNKNOWN"
@@ -17,29 +17,22 @@ class Evaluator:
         )
         self.correct = 0
         self.total = 0
-        self.results = []
 
     def log_example(
         self,
         question: str,
-        agent_a_output: str,
+        text_agent_output: str,
+        vision_agent_output: str,
         meta_output: str,
         ground_truth: str,
         example_idx: int
     ):
         predicted = extract_answer(meta_output)
         is_correct = predicted == ground_truth.upper()
-        
+
         if is_correct:
             self.correct += 1
         self.total += 1
-
-        self.results.append({
-            "idx": example_idx,
-            "predicted": predicted,
-            "ground_truth": ground_truth,
-            "correct": is_correct,
-        })
 
         wandb.log({
             "example_idx": example_idx,
@@ -47,9 +40,13 @@ class Evaluator:
             "ground_truth": ground_truth,
             "correct": int(is_correct),
             "running_accuracy": self.correct / self.total,
-            "agent_a_output": agent_a_output,
+            "text_agent_output": text_agent_output,
+            "vision_agent_output": vision_agent_output,
             "meta_output": meta_output,
+            "question": question,
         })
+
+        print(f"  Predicted: {predicted} | Ground truth: {ground_truth} | {'✓' if is_correct else '✗'}")
 
     def finish(self):
         final_accuracy = self.correct / self.total if self.total > 0 else 0
