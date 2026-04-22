@@ -18,6 +18,19 @@ class Evaluator:
         self.correct = 0
         self.total = 0
 
+        # Define table columns up front
+        self.table = wandb.Table(columns=[
+            "example_idx",
+            "question",
+            "ground_truth",
+            "predicted",
+            "correct",
+            "text_agent_output",
+            "vision_agent_output",
+            "meta_output",
+            "running_accuracy"
+        ])
+
     def log_example(
         self,
         question: str,
@@ -34,25 +47,40 @@ class Evaluator:
             self.correct += 1
         self.total += 1
 
+        running_acc = self.correct / self.total
+
+        # Add a row to the table
+        self.table.add_data(
+            example_idx,
+            question,
+            ground_truth,
+            predicted,
+            "✓" if is_correct else "✗",
+            text_agent_output,
+            vision_agent_output,
+            meta_output,
+            round(running_acc, 3)
+        )
+
+        # Still log scalar metrics for charts
         wandb.log({
-            "example_idx": example_idx,
-            "predicted": predicted,
-            "ground_truth": ground_truth,
             "correct": int(is_correct),
-            "running_accuracy": self.correct / self.total,
-            "text_agent_output": text_agent_output,
-            "vision_agent_output": vision_agent_output,
-            "meta_output": meta_output,
-            "question": question,
+            "running_accuracy": running_acc,
+            "example_idx": example_idx
         })
 
         print(f"  Predicted: {predicted} | Ground truth: {ground_truth} | {'✓' if is_correct else '✗'}")
 
     def finish(self):
         final_accuracy = self.correct / self.total if self.total > 0 else 0
+
+        # Log the complete table at the end
+        wandb.log({"results_table": self.table})
+
         wandb.summary["final_accuracy"] = final_accuracy
         wandb.summary["total_examples"] = self.total
         wandb.summary["correct"] = self.correct
+
         print(f"\nFinal Accuracy: {final_accuracy:.2%} ({self.correct}/{self.total})")
         wandb.finish()
         return final_accuracy

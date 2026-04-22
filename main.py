@@ -11,7 +11,7 @@ from evaluation.evaluator import Evaluator
 
 load_dotenv()
 
-N_SAMPLES = 100
+N_SAMPLES = 10
 COMMUNICATION_MODE = "output_only"
 
 async def run_pipeline(example: dict) -> tuple[str, str, str]:
@@ -77,7 +77,7 @@ async def main():
     dataset = load_vqarad(split="test", n_samples=N_SAMPLES)
 
     evaluator = Evaluator(
-    run_name=f"{COMMUNICATION_MODE}100samples-llava7b-llama31-8b",
+    run_name=f"{COMMUNICATION_MODE}10samples_table",
     config={
         "communication_mode": COMMUNICATION_MODE,
         "text_model": "llama3.1:8b",
