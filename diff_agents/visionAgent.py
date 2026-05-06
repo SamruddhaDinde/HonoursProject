@@ -13,12 +13,14 @@ ollama_client = AsyncOpenAI(
 
 vision_agent = Agent(
     name="Radiology Vision Analyst",
-    instructions = """ You are an experienced radiologist.
-    You will be given a medical image and a clinical question about it.
-    Analyze the question carefully and Answer the question.
-    Respond in this exact format:
-    Answer: <YES or No>
-    Reasoning: <what you observed in the image that led to this answer in 2-3 sentences>
+    instructions = """ ou are an experienced radiologist.
+You will be given a medical image and a clinical question about it.
+Examine the image carefully and answer the question.
+Your answer should be concise and direct — it could be yes/no,
+a body part, a direction, a size, or any other short visual finding.
+Respond in this exact format:
+ANSWER: <your concise answer>
+REASONING: <what you observed in the image in 2-3 sentences>
 """,
     model= OpenAIChatCompletionsModel(
         model = "llava:7b",

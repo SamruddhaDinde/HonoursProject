@@ -18,9 +18,11 @@ meta_agent = Agent(
 - A radiology specialist who analysed the medical image
 
 Synthesise both assessments and provide a final answer.
+Your answer should be concise and direct — it could be yes/no,
+a body part, a direction, a size, or any other short clinical finding.
 Respond in this exact format:
-ANSWER: <YES or NO>
-REASONING: <why you chose this answer considering both specialists' inputs>
+ANSWER: <your concise answer>
+REASONING: <why you chose this answer considering both specialists>
 """,
     model= OpenAIChatCompletionsModel(
         model = "llama3.1:8b",

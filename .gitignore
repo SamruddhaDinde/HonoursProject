@@ -12,10 +12,16 @@ wheels/
 # Environment variables
 .env
 
+.jpg
+
 Projects/
 
 python_packages/
 wandb/
+
+dataset/images
+
+
 
 *.sif
 *.log
