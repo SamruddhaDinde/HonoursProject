@@ -6,12 +6,19 @@ from agents import Runner
 from diff_agents.textAgent import text_agent
 from diff_agents.visionAgent import vision_agent
 from diff_agents.metaAgent import meta_agent
-from data.loader import load_vqarad, format_text_question, format_vision_question, get_ground_truth, image_to_base64
+from data.loader import (
+    load_nejm,
+    format_text_question,
+    format_vision_question,
+    format_meta_question,
+    get_ground_truth,
+    image_to_base64,
+)
 from evaluation.evaluator import Evaluator
 
 load_dotenv()
 
-N_SAMPLES = 100
+N_SAMPLES = 30
 COMMUNICATION_MODE = "output_only"
 
 async def run_pipeline(example: dict) -> tuple[str, str, str]:
@@ -54,18 +61,20 @@ async def run_pipeline(example: dict) -> tuple[str, str, str]:
     vision_output = result_vision.final_output
 
     # --- Meta Agent (output-only: sees both final answers, no reasoning traces) ---
-    meta_input = f"""You are reviewing assessments from two specialists for this question:
+#     meta_input = f"""You are reviewing assessments from two specialists for this question:
+    
 
-Question: {example["question"]}
+# Question: {example["question"]}
 
-Clinical Text Specialist Assessment:
-{text_output}
+# Clinical Text Specialist Assessment:
+# {text_output}
 
-Radiology Vision Specialist Assessment:
-{vision_output}
+# Radiology Vision Specialist Assessment:
+# {vision_output}
 
-Synthesise both assessments and provide your final answer."""
-
+# Synthesise both assessments and provide your final answer."""
+    meta_input = format_meta_question(example, text_output, vision_output)
+  
     result_meta = await Runner.run(meta_agent, meta_input)
     meta_output = result_meta.final_output
 
@@ -73,11 +82,11 @@ Synthesise both assessments and provide your final answer."""
 
 
 async def main():
-    print(f"Loading {N_SAMPLES} VQA-RAD examples (closed questions only)...")
-    dataset = load_vqarad(split="test", n_samples=N_SAMPLES)
+    print(f"Loading {N_SAMPLES} NEJM examples (closed questions only)...")
+    dataset = load_nejm(n_samples=N_SAMPLES, seed=42)
 
     evaluator = Evaluator(
-    run_name=f"{COMMUNICATION_MODE}100samples_table_comprehensive_answers",
+    run_name=f"{COMMUNICATION_MODE}_30_samples_table_comprehensive_answers",
     config={
         "communication_mode": COMMUNICATION_MODE,
         "text_model": "llama3.1:8b",

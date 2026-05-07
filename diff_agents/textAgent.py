@@ -13,13 +13,11 @@ ollama_client = AsyncOpenAI(
 
 text_agent = Agent(
     name="Clinical Text Analyst",
-    instructions = """ You are an experienced clinical physician.
-You will be given a medical question without any images.
-Reason purely from clinical knowledge to answer.
-Your answer should be concise and direct — it could be yes/no, 
-a body part, a direction, a size, or any other short clinical finding.
+    instructions="""You are an experienced clinical physician.
+You will be given a clinical case description and multiple-choice options, without any image.
+Reason from clinical knowledge to choose the most likely diagnosis.
 Respond in this exact format:
-ANSWER: <your concise answer>
+ANSWER: <single letter A-E>
 REASONING: <your clinical reasoning in 2-3 sentences>
 """,
     model= OpenAIChatCompletionsModel(

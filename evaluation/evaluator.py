@@ -2,50 +2,27 @@ import wandb
 import re
 
 def extract_answer(response_text: str) -> str:
-    """Extract the answer after ANSWER: label."""
-    match = re.search(r"ANSWER:\s*(.+?)(?:\n|REASONING|$)", response_text, re.IGNORECASE)
+    """Extract the multiple-choice letter from the agent response."""
+    # Primary: 'ANSWER: X' pattern (what we instructed the model to use)
+    match = re.search(r"ANSWER:\s*([A-E])", response_text, re.IGNORECASE)
     if match:
-        return match.group(1).strip()
+        return match.group(1).upper()
+    # Fallback: any standalone A-E in the first 200 chars. Models occasionally
+    # break format. We accept this rather than scoring as wrong, but log it.
+    fallback = re.search(r"\b([A-E])\b", response_text[:200])
+    if fallback:
+        return fallback.group(1).upper()
     return "UNKNOWN"
 
+
 def is_correct(predicted: str, ground_truth: str) -> bool:
-    """
-    Flexible matching for open-ended medical answers.
-    Handles cases like 'right side' matching 'right',
-    or 'no abnormality seen' matching 'not seen here'.
-    """
-    predicted_clean = predicted.lower().strip()
-    ground_truth_clean = ground_truth.lower().strip()
-
-    # Exact match
-    if predicted_clean == ground_truth_clean:
-        return True
-
-    # Ground truth contained in predicted
-    if ground_truth_clean in predicted_clean:
-        return True
-
-    # Predicted contained in ground truth
-    if predicted_clean in ground_truth_clean:
-        return True
-
-    # Token overlap — check if any meaningful word matches
-    # Filter out common filler words
-    stopwords = {"the", "a", "an", "is", "are", "of", "in", "on", "at", "to", "no", "not"}
-    predicted_tokens = set(predicted_clean.split()) - stopwords
-    ground_truth_tokens = set(ground_truth_clean.split()) - stopwords
-
-    if predicted_tokens and ground_truth_tokens:
-        overlap = predicted_tokens & ground_truth_tokens
-        if overlap:
-            return True
-
-    return False
+    """Strict letter match for multiple choice."""
+    return predicted.strip().upper() == ground_truth.strip().upper()
 
 class Evaluator:
     def __init__(self, run_name: str, config: dict):
         self.run = wandb.init(
-            project="medical-multiagent",
+            project="medical-multiagent_nejm",
             name=run_name,
             config=config
         )

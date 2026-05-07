@@ -13,16 +13,14 @@ ollama_client = AsyncOpenAI(
 
 meta_agent = Agent(
     name="Meta Diagnostician",
-    instructions = """ You are a senior consultant reviewing assessments from two specialists:
+    instructions="""You are a senior consultant reviewing assessments from two specialists:
 - A clinical text specialist who reasoned from medical knowledge alone
 - A radiology specialist who analysed the medical image
 
-Synthesise both assessments and provide a final answer.
-Your answer should be concise and direct — it could be yes/no,
-a body part, a direction, a size, or any other short clinical finding.
+Synthesise both assessments and choose the most likely diagnosis.
 Respond in this exact format:
-ANSWER: <your concise answer>
-REASONING: <why you chose this answer considering both specialists>
+ANSWER: <single letter A-E>
+REASONING: <why you chose this answer, considering both specialists, 2-3 sentences>
 """,
     model= OpenAIChatCompletionsModel(
         model = "llama3.1:8b",
