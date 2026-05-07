@@ -21,7 +21,7 @@ ANSWER: <single letter A-E>
 REASONING: <your clinical reasoning in 2-3 sentences>
 """,
     model= OpenAIChatCompletionsModel(
-        model = "llama3.1:8b",
+        model = "medgemma1.5:4b",
         openai_client=ollama_client
     )
 )
