@@ -18,7 +18,7 @@ from evaluation.evaluator import Evaluator
 
 load_dotenv()
 
-N_SAMPLES = 500
+N_SAMPLES = 30
 COMMUNICATION_MODE = "output_only"
 
 async def run_pipeline(example: dict) -> tuple[str, str, str]:
@@ -86,7 +86,7 @@ async def main():
     dataset = load_nejm(n_samples=N_SAMPLES, seed=42)
 
     evaluator = Evaluator(
-    run_name=f"{COMMUNICATION_MODE}_500_samples_table_comprehensive_answers",
+    run_name=f"{COMMUNICATION_MODE}_30_samples_image_question_only_for_vision",
     config={
         "communication_mode": COMMUNICATION_MODE,
         "text_model": "medgemma1.5:4b",
@@ -102,12 +102,12 @@ async def main():
         text_output, vision_output, meta_output = await run_pipeline(example)
 
         evaluator.log_example(
+            image_id=example["image_id"],
             question=example["question"],
             text_agent_output=text_output,
             vision_agent_output=vision_output,
             meta_output=meta_output,
             ground_truth=get_ground_truth(example),
-            example_idx=i
         )
 
     evaluator.finish()

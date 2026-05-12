@@ -93,9 +93,58 @@ def image_to_base64(image: Image.Image) -> str:
     image.save(buffer, format="JPEG")
     return base64.b64encode(buffer.getvalue()).decode("utf-8")
 
+import re
+
+
+def split_context_and_question(case_text: str) -> tuple[str, str]:
+    """Split an NEJM case prompt into (clinical_context, diagnostic_question).
+
+    Heuristic: the last sentence containing a question marker is the
+    diagnostic question. Everything before it is clinical context.
+
+    If no question marker is found, the final sentence is treated as the
+    question and a warning is printed — this is rare but worth surfacing.
+
+    Returns:
+        (context, question) — both strings, both stripped.
+        If splitting fails, context is empty and question is the whole input.
+    """
+    # Split into sentences. Naive split on sentence enders is fine here;
+    # NEJM prompts don't contain abbreviations like "Dr." that would
+    # confuse this. Keep the terminator with each sentence.
+    sentences = re.split(r"(?<=[.?!])\s+", case_text.strip())
+
+    if len(sentences) <= 1:
+        # Single-sentence case — nothing to split. Treat whole thing as
+        # question; text agent will have no context, which is fine.
+        return "", case_text.strip()
+
+    # Find the last sentence that looks like a question
+    question_markers = ("?", "what ", "which ", "most likely",
+                        "best ", "diagnosis", "cause")
+
+    question_idx = None
+    for i in range(len(sentences) - 1, -1, -1):
+        lower = sentences[i].lower()
+        if any(marker in lower for marker in question_markers):
+            question_idx = i
+            break
+
+    if question_idx is None:
+        # Fallback: just take the last sentence as the question.
+        question_idx = len(sentences) - 1
+
+    context = " ".join(sentences[:question_idx]).strip()
+    question = " ".join(sentences[question_idx:]).strip()
+    return context, question
+
 
 def format_text_question(example: dict) -> str:
-    """Text agent input: clinical vignette + options. NO image."""
+    """Text agent input: clinical context + diagnostic question + options. NO image.
+
+    The text agent sees the full case — patient history, presentation, labs —
+    and answers from clinical reasoning alone.
+    """
     return f"""Clinical case:
 {example["question"]}
 
@@ -109,19 +158,57 @@ REASONING: <your clinical reasoning in 2-3 sentences>"""
 
 
 def format_vision_question(example: dict) -> str:
-    """Vision agent input: clinical vignette + options. Image passed separately."""
-    return f"""You are reviewing a medical image accompanying this case.
+    """Vision agent input: diagnostic question + options + image only.
 
-Clinical case:
-{example["question"]}
+    The vision agent receives a referral-style prompt: the diagnostic
+    question and options, plus the image, but WITHOUT patient history.
+    This mirrors a radiology consult where the radiologist analyses the
+    image in response to a specific query, without access to the chart.
+    """
+    _, diagnostic_question = split_context_and_question(example["question"])
+
+    return f"""You are reviewing a medical image. A clinician has sent you the following query along with this image.
+
+Query: {diagnostic_question}
 
 Options:
 {_format_options(example["options"])}
 
-Examine the image and choose the most likely diagnosis.
+Examine the image and choose the most likely answer based on what you observe.
 Respond in this exact format:
 ANSWER: <single letter A-E>
 REASONING: <what you observed in the image and how it informs your choice, 2-3 sentences>"""
+
+# This was the previous input split, where the vision agent used to have the full text context
+
+# def format_text_question(example: dict) -> str:
+#     """Text agent input: clinical vignette + options. NO image."""
+#     return f"""Clinical case:
+# {example["question"]}
+
+# Options:
+# {_format_options(example["options"])}
+
+# Based on the clinical history alone, choose the most likely diagnosis.
+# Respond in this exact format:
+# ANSWER: <single letter A-E>
+# REASONING: <your clinical reasoning in 2-3 sentences>"""
+
+
+# def format_vision_question(example: dict) -> str:
+#     """Vision agent input: clinical vignette + options. Image passed separately."""
+#     return f"""You are reviewing a medical image accompanying this case.
+
+# Clinical case:
+# {example["question"]}
+
+# Options:
+# {_format_options(example["options"])}
+
+# Examine the image and choose the most likely diagnosis.
+# Respond in this exact format:
+# ANSWER: <single letter A-E>
+# REASONING: <what you observed in the image and how it informs your choice, 2-3 sentences>"""
 
 
 def format_meta_question(example: dict, text_output: str, vision_output: str) -> str:
