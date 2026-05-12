@@ -149,6 +149,24 @@ Respond in this exact format:
 ANSWER: <single letter A-E>
 REASONING: <why you chose this answer, considering both specialists, 2-3 sentences>"""
 
+def format_single_agent_question(example: dict) -> str:
+    """Single-agent baseline: one model sees clinical text, options, AND image.
+    
+    This is the strong-baseline condition — same model as the multi-agent
+    pipeline, but given all information at once with no decomposition.
+    """
+    return f"""You are reviewing a medical case with an accompanying image.
+
+Clinical case:
+{example["question"]}
+
+Options:
+{_format_options(example["options"])}
+
+Examine both the clinical history and the image, then choose the most likely diagnosis.
+Respond in this exact format:
+ANSWER: <single letter A-E>
+REASONING: <how the clinical history and image findings together support your choice, 2-3 sentences>"""
 
 def get_ground_truth(example: dict) -> str:
     """Returns the correct answer letter (A-E)."""
