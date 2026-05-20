@@ -23,7 +23,7 @@ ANSWER: <single letter A-E>
 REASONING: <why you chose this answer, considering both specialists, 2-3 sentences>
 """,
     model= OpenAIChatCompletionsModel(
-        model = "llama3.1:8b",
+        model = "medgemma1.5:4b",
         openai_client=ollama_client
     )
 )

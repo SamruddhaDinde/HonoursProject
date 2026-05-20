@@ -86,6 +86,26 @@ def load_nejm(n_samples: int = None, seed: int = 42, require_image: bool = True)
 
     return [_to_example(c) for c in cases]
 
+def load_nejm_split(split: str = "all", seed: int = 42, train_n: int = 350):
+    """Load NEJM cases with train/test split matching ThoughtComm.
+
+    Args:
+        split: "all" (689 cases), "train" (first train_n), or "test" (remaining)
+        seed: Must match ThoughtComm's seed (42) for alignment
+        train_n: Must match ThoughtComm's TRAIN_SPLIT (350)
+
+    Returns:
+        List of example dicts, same format as load_nejm.
+    """
+    all_cases = load_nejm(n_samples=None, seed=seed)
+
+    if split == "train":
+        return all_cases[:train_n]
+    elif split == "test":
+        return all_cases[train_n:]
+    else:
+        return all_cases
+    
 
 def image_to_base64(image: Image.Image) -> str:
     """Convert a PIL image to a base64-encoded JPEG string for vision input."""
@@ -210,19 +230,44 @@ REASONING: <what you observed in the image and how it informs your choice, 2-3 s
 # ANSWER: <single letter A-E>
 # REASONING: <what you observed in the image and how it informs your choice, 2-3 sentences>"""
 
+## This was the previous case where the meta agent used to have access to the clinical context 
+# def format_meta_question(example: dict, text_output: str, vision_output: str) -> str:
+#     """Meta agent input for OUTPUT-ONLY mode (Mode 1).
 
-def format_meta_question(example: dict, text_output: str, vision_output: str) -> str:
+#     Future modes (CoT sharing, structured) will use different formatters here,
+#     which is why this lives in the loader rather than being inlined in main.py.
+#     """
+#     return f"""You are a senior consultant reviewing two specialists' assessments of this case.
+
+# Clinical case:
+# {example["question"]}
+
+# Options:
+# {_format_options(example["options"])}
+
+# Clinical Text Specialist's assessment:
+# {text_output}
+
+# Radiology Vision Specialist's assessment:
+# {vision_output}
+
+# Synthesise both assessments and choose the most likely diagnosis.
+# Respond in this exact format:
+# ANSWER: <single letter A-E>
+# REASONING: <why you chose this answer, considering both specialists, 2-3 sentences>"""
+
+def format_meta_question(example, text_output, vision_output):
     """Meta agent input for OUTPUT-ONLY mode (Mode 1).
-
-    Future modes (CoT sharing, structured) will use different formatters here,
-    which is why this lives in the loader rather than being inlined in main.py.
+    
+    The meta agent sees ONLY the specialists' outputs and the answer options.
+    It does NOT see the original clinical case — forcing it to synthesise
+    from the specialists' reports rather than reasoning independently.
     """
-    return f"""You are a senior consultant reviewing two specialists' assessments of this case.
+    return f"""You are a senior consultant. Two specialists have assessed a clinical case.
+You do not have access to the original case details — you must base your decision
+entirely on the specialists' assessments below.
 
-Clinical case:
-{example["question"]}
-
-Options:
+The available diagnostic options are:
 {_format_options(example["options"])}
 
 Clinical Text Specialist's assessment:
@@ -231,10 +276,10 @@ Clinical Text Specialist's assessment:
 Radiology Vision Specialist's assessment:
 {vision_output}
 
-Synthesise both assessments and choose the most likely diagnosis.
+Based solely on these two assessments, choose the most likely diagnosis.
 Respond in this exact format:
 ANSWER: <single letter A-E>
-REASONING: <why you chose this answer, considering both specialists, 2-3 sentences>"""
+REASONING: <why you chose this answer based on the specialists' input, 2-3 sentences>"""
 
 def format_single_agent_question(example: dict) -> str:
     """Single-agent baseline: one model sees clinical text, options, AND image.
