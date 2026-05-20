@@ -1,0 +1,17 @@
+# ThoughtComm additional dependencies
+# (beyond what your existing pipeline already uses)
+
+# Core ML
+torch>=2.1.0
+transformers>=4.40.0
+accelerate>=0.27.0
+
+# Already in your project (listed for completeness)
+Pillow>=10.0.0
+wandb>=0.16.0
+python-dotenv>=1.0.0
+
+# For MedGemma multimodal image processing
+# (transformers should pull this in, but just in case)
+sentencepiece>=0.1.99
+protobuf>=3.20.0

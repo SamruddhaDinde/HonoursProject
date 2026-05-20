@@ -1,0 +1,10 @@
+{
+  "hidden_size": 2560,
+  "n_train": 350,
+  "n_test": 339,
+  "total_cases": 689,
+  "seed": 42,
+  "model_id": "google/medgemma-1.5-4b-it",
+  "train_norm_mean": 274.6623229980469,
+  "extraction_time_minutes": 133.80499223470687
+}
