@@ -304,7 +304,81 @@ def get_ground_truth(example: dict) -> str:
     """Returns the correct answer letter (A-E)."""
     return example["answer"]
 
+def format_text_revision(example, text_r1_output, vision_r1_output):
+    """Round 2: Text agent revises after seeing vision specialist's reasoning.
 
+    Exchange-of-Thought style — the text agent sees the vision specialist's
+    full R1 output and decides whether to update its own answer.
+    """
+    _, diagnostic_question = split_context_and_question(example["question"])
+
+    return f"""You previously assessed a clinical case and gave your answer.
+Now you are shown the radiology vision specialist's independent assessment
+of the same case. They examined the medical image for this query:
+"{diagnostic_question}"
+
+Your original assessment:
+{text_r1_output}
+
+Vision Specialist's assessment:
+{vision_r1_output}
+
+Consider whether the vision specialist's findings change your diagnosis.
+You may keep your original answer or revise it.
+Respond in this exact format:
+ANSWER: <single letter A-E>
+REASONING: <why you kept or changed your answer, 2-3 sentences>"""
+
+
+def format_vision_revision(example, vision_r1_output, text_r1_output):
+    """Round 2: Vision agent revises after seeing text specialist's reasoning.
+
+    The vision agent sees the text specialist's clinical reasoning and
+    decides whether to update its image-based assessment.
+    """
+    return f"""You previously examined a medical image and gave your assessment.
+Now you are shown the clinical text specialist's independent assessment
+of the same case. They had access to the full patient history.
+
+Your original assessment:
+{vision_r1_output}
+
+Clinical Text Specialist's assessment:
+{text_r1_output}
+
+Consider whether the text specialist's clinical reasoning changes your diagnosis.
+You may keep your original answer or revise it.
+Respond in this exact format:
+ANSWER: <single letter A-E>
+REASONING: <why you kept or changed your answer, 2-3 sentences>"""
+
+
+def format_meta_question_debate(example, text_r2_output, vision_r2_output):
+    """Meta agent input for Mode 2b (debate).
+
+    Sees ONLY the revised (R2) outputs from both specialists plus options.
+    Same restriction as Mode 1: no access to original clinical case.
+    """
+    return f"""You are a senior consultant. Two specialists have assessed a clinical case
+through two rounds — first independently, then after reviewing each other's reasoning.
+You are seeing their final revised assessments.
+
+You do not have access to the original case details — you must base your decision
+entirely on the specialists' revised assessments below.
+
+The available diagnostic options are:
+{_format_options(example["options"])}
+
+Clinical Text Specialist's revised assessment:
+{text_r2_output}
+
+Radiology Vision Specialist's revised assessment:
+{vision_r2_output}
+
+Based solely on these revised assessments, choose the most likely diagnosis.
+Respond in this exact format:
+ANSWER: <single letter A-E>
+REASONING: <why you chose this answer based on the specialists' revised input, 2-3 sentences>"""
 # --- Internals ---------------------------------------------------------------
 
 def _to_example(case: dict) -> dict:
