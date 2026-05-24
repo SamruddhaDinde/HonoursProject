@@ -14,6 +14,8 @@ Expected layout (paths shown inside the Singularity container):
 
 Override the dataset directory by setting NEJM_DATASET_DIR in .env.
 """
+from evaluation.json_parser import parse_specialist_json
+from evaluation.evaluator import extract_answer
 
 import os
 import json
@@ -407,4 +409,127 @@ def _to_example(case: dict) -> dict:
 def _format_options(options: dict) -> str:
     return "\n".join(f"  {letter}) {text}" for letter, text in options.items())
 
+## for mode-3 structured JSON ouput
 
+"""
+STRUCTURED COMMUNICATION FORMATTERS (Mode 3)
+
+Add these functions to data/loader.py alongside the existing formatters.
+Also add this import at the top of loader.py:
+
+    from evaluation.json_parser import parse_specialist_json
+
+These formatters produce structured JSON output from specialists,
+which the meta agent receives as parsed, typed data rather than
+free-text reasoning.
+"""
+
+
+def format_text_question_structured(example: dict) -> str:
+    """Text agent structured prompt: produce JSON instead of free text.
+
+    Same information access as the standard text agent (full clinical
+    context + options, no image), but output format is structured JSON.
+    """
+    return f"""You are an experienced clinical physician.
+You will be given a clinical case description and multiple-choice options, without any image.
+Reason from clinical knowledge to choose the most likely diagnosis.
+
+Respond with ONLY a valid JSON object. No other text, no markdown backticks.
+
+{{
+  "answer": "<single letter A-E>",
+  "confidence": <number between 0.0 and 1.0>,
+  "key_findings": ["<finding 1>", "<finding 2>"],
+  "supporting_evidence": "<one sentence explaining your choice>",
+  "alternative_considered": "<single letter A-E of your second choice>",
+  "why_not_alternative": "<one sentence why you rejected it>"
+}}
+
+Clinical case:
+{example["question"]}
+
+Options:
+{_format_options(example["options"])}"""
+
+
+def format_vision_question_structured(example: dict) -> str:
+    """Vision agent structured prompt: produce JSON from image analysis.
+
+    Same information access as the standard vision agent (diagnostic
+    question + options + image, no patient history), structured output.
+    """
+    _, diagnostic_question = split_context_and_question(example["question"])
+
+    return f"""You are an experienced radiologist.
+You are reviewing a medical image. A clinician sent you the following query.
+
+Respond with ONLY a valid JSON object. No other text, no markdown backticks.
+
+{{
+  "answer": "<single letter A-E>",
+  "confidence": <number between 0.0 and 1.0>,
+  "key_findings": ["<visual finding 1>", "<visual finding 2>"],
+  "supporting_evidence": "<one sentence about what you see in the image>",
+  "alternative_considered": "<single letter A-E of your second choice>",
+  "why_not_alternative": "<one sentence why you rejected it>"
+}}
+
+Query: {diagnostic_question}
+
+Options:
+{_format_options(example["options"])}"""
+
+
+def format_meta_question_structured(example: dict, text_json: dict, vision_json: dict):
+    """Meta agent for Mode 3: receives structured specialist assessments.
+
+    Constrained to choose ONLY from the specialists' proposed answers.
+    Confidence scores give the meta agent a principled basis for
+    arbitrating between disagreeing specialists.
+    """
+    # Build constrained option set from specialists' answers
+    text_ans = text_json.get("answer", "?")
+    vision_ans = vision_json.get("answer", "?")
+    proposed = set()
+    if text_ans in example["options"]:
+        proposed.add(text_ans)
+    if vision_ans in example["options"]:
+        proposed.add(vision_ans)
+
+    # Fallback: if both failed to produce valid answers, show all options
+    if not proposed:
+        proposed_options = _format_options(example["options"])
+        constraint_note = "Neither specialist produced a clear answer. Choose from all available options."
+    else:
+        proposed_options = "\n".join(
+            f"  {k}) {example['options'][k]}" for k in sorted(proposed)
+        )
+        constraint_note = "You must choose one of the options proposed by the specialists."
+
+    return f"""You are a senior consultant reviewing structured assessments from two specialists.
+You do not have access to the original case details. {constraint_note}
+
+The specialists proposed these options:
+{proposed_options}
+
+── Clinical Text Specialist ──
+Answer: {text_ans}
+Confidence: {text_json.get('confidence', 'N/A')}
+Key findings: {', '.join(text_json.get('key_findings', [])) or 'None provided'}
+Supporting evidence: {text_json.get('supporting_evidence', 'None provided')}
+Alternative considered: {text_json.get('alternative_considered', 'N/A')}
+Why rejected: {text_json.get('why_not_alternative', 'N/A')}
+
+── Radiology Vision Specialist ──
+Answer: {vision_ans}
+Confidence: {vision_json.get('confidence', 'N/A')}
+Key findings: {', '.join(vision_json.get('key_findings', [])) or 'None provided'}
+Supporting evidence: {vision_json.get('supporting_evidence', 'None provided')}
+Alternative considered: {vision_json.get('alternative_considered', 'N/A')}
+Why rejected: {vision_json.get('why_not_alternative', 'N/A')}
+
+Based on the specialists' structured assessments and confidence levels, choose the most likely diagnosis.
+Respond in this exact format:
+ANSWER: <single letter from the proposed options above>
+REASONING: <why you chose this, referencing the specialists' confidence and findings, 2-3 sentences>"""

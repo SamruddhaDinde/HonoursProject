@@ -9,6 +9,7 @@ load_dotenv()
 ollama_client = AsyncOpenAI(
     base_url =os.getenv("OPENAI_BASE_URL","http://localhost:11434/v1"),
     #api_key = os.getenv("OPENAI_API_KEY", "ollama")
+    timeout=120.0,
 )
 
 text_agent = Agent(
