@@ -16,7 +16,7 @@ import wandb
 import re
 
 
-# ── Answer extraction ────────────────────────────────────────────────────
+#  Answer extraction 
 
 def extract_answer(response_text: str) -> str:
     """Extract the multiple-choice letter from an agent response.
@@ -28,12 +28,11 @@ def extract_answer(response_text: str) -> str:
     if not response_text:
         return "UNKNOWN"
 
-    # Primary: 'ANSWER: X' pattern (what we instructed the model to use)
+    # Primary: 'ANSWER: X' pattern 
     match = re.search(r"ANSWER:\s*([A-E])", response_text, re.IGNORECASE)
     if match:
         return match.group(1).upper()
 
-    # Fallback: any standalone A-E in the first 200 chars
     fallback = re.search(r"\b([A-E])\b", response_text[:200])
     if fallback:
         return fallback.group(1).upper()
@@ -46,7 +45,7 @@ def is_correct(predicted: str, ground_truth: str) -> bool:
     return predicted.strip().upper() == ground_truth.strip().upper()
 
 
-# ── Evaluator class ──────────────────────────────────────────────────────
+#  Evaluator class 
 
 class Evaluator:
     """Logs experimental runs to W&B with comprehensive per-case detail.
@@ -82,7 +81,7 @@ class Evaluator:
         self.condition_kind = None
         self.table = None
 
-    # ── Multi-agent logging ──────────────────────────────────────────
+    #  Multi-agent logging 
 
     def log_multi_agent(
         self,
@@ -220,7 +219,7 @@ class Evaluator:
               f"Meta: {meta_pred}({'ok' if meta_ok else 'x'}) | "
               f"GT: {ground_truth}")
 
-    # ── Single-agent logging ─────────────────────────────────────────
+    #  Single-agent logging ─
 
     def log_single_agent(
         self,
@@ -276,7 +275,7 @@ class Evaluator:
         print(f"  Predicted: {predicted} | GT: {ground_truth} | "
               f"{'correct' if correct else 'wrong'}")
 
-    # ── Finish ───────────────────────────────────────────────────────
+    #  Finish 
 
     def finish(self):
         """Write final metrics and close W&B run."""

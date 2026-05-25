@@ -9,11 +9,11 @@ from data.loader import (
     get_ground_truth,
     image_to_base64,
 )
-from evaluation.evaluator import Evaluator
+from evaluation.evaluator_old import Evaluator
 
 load_dotenv()
 
-N_SAMPLES = 500
+N_SAMPLES = 689
 SEED = 42
 CONDITION = "single_agent_baseline"
 MODEL_NAME = "medgemma1.5:4b"  

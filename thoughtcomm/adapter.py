@@ -47,9 +47,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 ARTIFACTS_DIR = Path(os.getenv("THOUGHTCOMM_ARTIFACTS", "artifacts"))
 
 
-# ═══════════════════════════════════════════════════════════════════════════
 # 1. PERSONALIZATION
-# ═══════════════════════════════════════════════════════════════════════════
 
 def personalize_thoughts(z_hat, agent_mask, agreement, w_private, w_shared):
     """
@@ -88,9 +86,8 @@ def personalize_thoughts(z_hat, agent_mask, agreement, w_private, w_shared):
     return z_personalized
 
 
-# ═══════════════════════════════════════════════════════════════════════════
 # 2. ADAPTER ARCHITECTURE
-# ═══════════════════════════════════════════════════════════════════════════
+
 
 class PrefixAdapter(nn.Module):
     """
@@ -148,9 +145,7 @@ class PrefixAdapter(nn.Module):
         return prefix
 
 
-# ═══════════════════════════════════════════════════════════════════════════
 # 3. TRAINING LOOP
-# ═══════════════════════════════════════════════════════════════════════════
 
 def train_adapter(
     prefix_length: int = 1,
@@ -224,7 +219,6 @@ def train_adapter(
     for p in model.parameters():
         p.requires_grad = False
 
-    # ── Initialize adapter + agreement weights (TRAINABLE) ───────────
     adapter = PrefixAdapter(latent_dim, hidden_size, prefix_length).to(device)
 
     # Agreement weights: w_1 for private thoughts, w_2 for shared thoughts
@@ -257,7 +251,7 @@ def train_adapter(
             },
         )
 
-    # ── Pre-compute reference hidden states (without prefix) ─────────
+    
     # These are the "baseline" states that we compare against.
     # Computing them once saves time during training.
     print("  Pre-computing reference hidden states...")
@@ -269,7 +263,7 @@ def train_adapter(
     all_cases = load_nejm(n_samples=None, seed=42)
     train_cases = all_cases[:len(train_data)]
 
-    # ── Training ─────────────────────────────────────────────────────
+    #  Training 
     print(f"\n  Starting training ({epochs} epochs)...")
 
     for epoch in range(epochs):
@@ -284,38 +278,38 @@ def train_adapter(
         ):
             optimizer.zero_grad()
 
-            # ── Extract latent thoughts (frozen encoder) ─────────────
+            #  Extract latent thoughts (frozen encoder) 
             H_t = case_data["H_t"].to(device)
             H_normalized = (H_t - h_mean.squeeze()) / h_std.squeeze()
             z_hat = autoencoder.encode(H_normalized)
 
-            # ── Personalize for vision agent ─────────────────────────
+            #  Personalize for vision agent 
             z_vision = personalize_thoughts(
                 z_hat, vision_mask, agreement, w_private, w_shared)
 
-            # ── Personalize for text agent ───────────────────────────
+            #  Personalize for text agent 
             z_text = personalize_thoughts(
                 z_hat, text_mask, agreement, w_private, w_shared)
 
-            # ── Generate prefix vectors ──────────────────────────────
+            #  Generate prefix vectors 
             prefix_vision = adapter(z_vision)  # [prefix_length, d_model]
             prefix_text = adapter(z_text)      # [prefix_length, d_model]
 
-            # ── Compute loss for VISION agent ────────────────────────
+            #  Compute loss for VISION agent 
             vision_prompt = format_vision_question(case)
             sim_loss_v = _compute_prefix_loss(
                 model, processor, vision_prompt,
                 prefix_vision, image=case["image"], device=device,
             )
 
-            # ── Compute loss for TEXT agent ───────────────────────────
+            # Compute loss for TEXT agent 
             text_prompt = format_text_question(case)
             sim_loss_t = _compute_prefix_loss(
                 model, processor, text_prompt,
                 prefix_text, image=None, device=device,
             )
 
-            # ── Total loss ───────────────────────────────────────────
+            #  Total loss 
             total_loss = sim_loss_v + sim_loss_t
 
             total_loss.backward()
@@ -325,7 +319,7 @@ def train_adapter(
             epoch_total_loss += total_loss.item()
             n_cases += 1
 
-        # ── Epoch logging ────────────────────────────────────────────
+        # Epoch logging 
         avg_sim = epoch_sim_loss / n_cases if n_cases > 0 else 0
         avg_total = epoch_total_loss / n_cases if n_cases > 0 else 0
 
@@ -346,7 +340,7 @@ def train_adapter(
                 "phase2/epoch": epoch + 1,
             })
 
-    # ── Save ─────────────────────────────────────────────────────────
+    #  Save 
     torch.save(adapter.state_dict(), ARTIFACTS_DIR / "adapter.pt")
     torch.save({
         "w_private": w_private.detach().cpu(),
@@ -377,7 +371,6 @@ def _compute_prefix_loss(model, processor, text, prefix, image=None, device=None
     3. Return 1 - cosine_similarity between the two
 
     The paper (Eq. 12):
-        L_comm includes: 1 − cos(φ_bar(y_gen), φ_bar(y_ref))
 
     We simplify by comparing the last hidden state (the model's final
     "thinking" representation) rather than generated text embeddings.
@@ -385,7 +378,7 @@ def _compute_prefix_loss(model, processor, text, prefix, image=None, device=None
     """
     from thoughtcomm.model_loader import get_merged_embeddings
 
-    # ── Reference: forward WITHOUT prefix (frozen, no grad) ──────────
+    #  Reference: forward WITHOUT prefix (frozen, no grad) 
     ref_embeds, ref_mask = get_merged_embeddings(
         model, processor, text, image, device)
     # ref_embeds: [1, seq_len, hidden_size]
@@ -397,7 +390,7 @@ def _compute_prefix_loss(model, processor, text, prefix, image=None, device=None
         ref_hidden = ref_outputs.hidden_states[-1][0, -1, :]
         ref_hidden = ref_hidden.detach()
 
-    # ── With prefix: forward WITH prefix (grad flows to adapter) ─────
+    #  With prefix: forward WITH prefix (grad flows to adapter) 
     prefix_3d = prefix.unsqueeze(0).to(ref_embeds.dtype)  # [1, m, d_model]
     injected = torch.cat([prefix_3d, ref_embeds], dim=1)
 
@@ -410,7 +403,7 @@ def _compute_prefix_loss(model, processor, text, prefix, image=None, device=None
                         output_hidden_states=True)
     gen_hidden = gen_outputs.hidden_states[-1][0, -1, :]
 
-    # ── Semantic similarity loss ─────────────────────────────────────
+    #  Semantic similarity loss 
     sim = F.cosine_similarity(
         gen_hidden.unsqueeze(0).float(),
         ref_hidden.unsqueeze(0).float(),
@@ -418,11 +411,7 @@ def _compute_prefix_loss(model, processor, text, prefix, image=None, device=None
     sim_loss = 1.0 - sim.mean()
 
     return sim_loss
-
-
-# ═══════════════════════════════════════════════════════════════════════════
 # 4. MAIN
-# ═══════════════════════════════════════════════════════════════════════════
 
 def main():
     import argparse

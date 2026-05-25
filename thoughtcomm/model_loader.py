@@ -18,22 +18,11 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# ---------------------------------------------------------------------------
-# Configuration — override any of these in your .env file
-# ---------------------------------------------------------------------------
 
-# The HuggingFace model ID for MedGemma.
-# MedGemma 4B multimodal (handles both text and images):
-#   google/medgemma-4b-it
-# If this doesn't match your version, check:
-#   https://huggingface.co/google
 MODEL_ID = os.getenv("MEDGEMMA_MODEL_ID", "google/medgemma-1.5-4b-it")
 
-# Where to cache the downloaded model weights (~8GB).
-# Default: HuggingFace's standard cache dir (~/.cache/huggingface/)
 CACHE_DIR = os.getenv("HF_HOME", None)
 
-# Device: auto picks the best available GPU
 DEVICE = os.getenv("TORCH_DEVICE", "auto")
 
 
@@ -52,9 +41,6 @@ def load_medgemma(model_id: str = None):
     model_id = model_id or MODEL_ID
     hf_token = os.getenv("HF_TOKEN", None)
 
-    # ── GPU detection ────────────────────────────────────────────────
-    # Explicit check — don't rely on device_map="auto" which needs
-    # the accelerate library that may not be installed.
     cuda_available = torch.cuda.is_available()
     if cuda_available:
         device = torch.device("cuda")
@@ -75,7 +61,7 @@ def load_medgemma(model_id: str = None):
     print(f"  Dtype: {dtype}")
     print(f"  HF token: {'set' if hf_token else 'NOT SET — you may need this for gated models'}")
 
-    # ── Load processor (tokenizer + image preprocessor) ──────────────
+    #  Load processor (tokenizer + image preprocessor) 
     from transformers import AutoProcessor
     processor = AutoProcessor.from_pretrained(
         model_id,
@@ -84,7 +70,7 @@ def load_medgemma(model_id: str = None):
         trust_remote_code=True,
     )
 
-    # ── Load model ───────────────────────────────────────────────────
+    #  Load model 
     # We load to CPU first (no device_map), then move to GPU explicitly.
     # This avoids the accelerate dependency entirely.
     model = None
@@ -144,7 +130,7 @@ def load_medgemma(model_id: str = None):
                 f"  3. You have enough VRAM (~8GB for 4B model in fp16)"
             )
 
-    # ── Move to device explicitly ────────────────────────────────────
+    #  Move to device explicitly 
     # We loaded without device_map to avoid the accelerate dependency.
     # Now move the whole model to GPU (or keep on CPU).
     print(f"  Moving model to {device}...")
@@ -155,7 +141,7 @@ def load_medgemma(model_id: str = None):
     param_device = next(model.parameters()).device
     print(f"  ✓ Model is on: {param_device}")
 
-    # ── Extract config ───────────────────────────────────────────────
+    #  Extract config ─
     # The hidden_size tells us the dimensionality of hidden states.
     # This is critical — it determines the autoencoder's input size.
     hidden_size = _get_hidden_size(model)
@@ -295,10 +281,10 @@ def extract_hidden_state(model, processor, text: str, image=None, device=None):
     if device is None:
         device = next(model.parameters()).device
 
-    # ── Prepare inputs using chat template ────────────────────────────
+    #  Prepare inputs using chat template 
     inputs = _prepare_inputs(processor, text, image, device)
 
-    # ── Forward pass for hidden states ───────────────────────────────
+    #  Forward pass for hidden states ─
     with torch.no_grad():
         outputs = model(**inputs, output_hidden_states=True)
 
@@ -309,7 +295,7 @@ def extract_hidden_state(model, processor, text: str, image=None, device=None):
     hidden_state = last_layer[0, -1, :]          # [hidden_size]
     hidden_state = hidden_state.float().cpu()     # Convert to float32, move to CPU
 
-    # ── Generate text response ───────────────────────────────────────
+    #  Generate text response 
     with torch.no_grad():
         gen_ids = model.generate(
             **inputs,
@@ -386,13 +372,13 @@ def generate_with_prefix(model, processor, text: str, prefix_vector: torch.Tenso
 
     prefix_vector = prefix_vector.to(device).to(model.dtype)
 
-    # ── Get merged embeddings ────────────────────────────────────────
+    #  Get merged embeddings 
     merged_embeds, attention_mask = get_merged_embeddings(
         model, processor, text, image, device
     )
 
-    # ── Prepend prefix ───────────────────────────────────────────────
-    # prefix shape: [1, d_model] → [1, 1, d_model]
+    #  Prepend prefix ─
+    # prefix shape: [1, d_model] to [1, 1, d_model]
     if prefix_vector.dim() == 1:
         prefix_vector = prefix_vector.unsqueeze(0).unsqueeze(0)
     elif prefix_vector.dim() == 2:
@@ -408,7 +394,7 @@ def generate_with_prefix(model, processor, text: str, prefix_vector: torch.Tenso
                              device=device, dtype=attention_mask.dtype)
     extended_mask = torch.cat([prefix_mask, attention_mask], dim=1)
 
-    # ── Generate ─────────────────────────────────────────────────────
+    #  Generate ─
     with torch.no_grad():
         gen_ids = model.generate(
             inputs_embeds=injected,

@@ -43,9 +43,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 ARTIFACTS_DIR = Path(os.getenv("THOUGHTCOMM_ARTIFACTS", "artifacts"))
 
 
-# ═══════════════════════════════════════════════════════════════════════════
 # 1. ARCHITECTURE
-# ═══════════════════════════════════════════════════════════════════════════
 
 class ThoughtAutoencoder(nn.Module):
     """
@@ -72,7 +70,7 @@ class ThoughtAutoencoder(nn.Module):
         self.input_dim = input_dim
         self.latent_dim = latent_dim
 
-        # ── Encoder: H_t → Z_hat ────────────────────────────────────
+        #  Encoder: H_t → Z_hat 
         # Compresses the concatenated agent states into latent thoughts.
         # We use LayerNorm because LLM hidden states can have very
         # different scales across dimensions.
@@ -88,7 +86,7 @@ class ThoughtAutoencoder(nn.Module):
             nn.Linear(1024, latent_dim),
         )
 
-        # ── Decoder: Z_hat → H_reconstructed ────────────────────────
+        #  Decoder: Z_hat → H_reconstructed 
         # Reconstructs the hidden states from latent thoughts.
         # The Jacobian of THIS decoder is what we regularize for sparsity.
         self.decoder = nn.Sequential(
@@ -116,9 +114,7 @@ class ThoughtAutoencoder(nn.Module):
         return z_hat, h_recon
 
 
-# ═══════════════════════════════════════════════════════════════════════════
 # 2. JACOBIAN COMPUTATION
-# ═══════════════════════════════════════════════════════════════════════════
 
 def compute_jacobian_stochastic(decoder, z_hat, n_samples=128):
     """
@@ -191,9 +187,7 @@ def compute_full_jacobian(decoder, z_hat_single):
     return jacobian
 
 
-# ═══════════════════════════════════════════════════════════════════════════
 # 3. TRAINING LOOP
-# ═══════════════════════════════════════════════════════════════════════════
 
 def train_autoencoder(
     latent_dim: int = 512,
@@ -221,7 +215,7 @@ def train_autoencoder(
     """
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    # ── Load data ────────────────────────────────────────────────────
+    #  Load data 
     print("\n" + "=" * 60)
     print("PHASE 1: Training Sparsity-Regularized Autoencoder")
     print("=" * 60)
@@ -256,14 +250,14 @@ def train_autoencoder(
     dataset = TensorDataset(H_normalized)
     dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
 
-    # ── Initialize model ─────────────────────────────────────────────
+    #  Initialize model ─
     autoencoder = ThoughtAutoencoder(input_dim, latent_dim).to(device)
     optimizer = torch.optim.Adam(autoencoder.parameters(), lr=lr)
 
     total_params = sum(p.numel() for p in autoencoder.parameters())
     print(f"  Autoencoder parameters: {total_params:,}")
 
-    # ── W&B setup ────────────────────────────────────────────────────
+    #  W&B setup 
     if log_wandb:
         import wandb
         wandb.init(
@@ -281,7 +275,7 @@ def train_autoencoder(
             },
         )
 
-    # ── Training ─────────────────────────────────────────────────────
+    #  Training ─
     best_loss = float("inf")
 
     for epoch in range(epochs):
@@ -322,7 +316,7 @@ def train_autoencoder(
             epoch_total += loss.item()
             n_batches += 1
 
-        # ── Epoch logging ────────────────────────────────────────────
+        #  Epoch logging 
         avg_recon = epoch_recon / n_batches
         avg_sparse = epoch_sparse / n_batches
         avg_total = epoch_total / n_batches
@@ -348,7 +342,7 @@ def train_autoencoder(
                 "phase1/epoch": epoch + 1,
             })
 
-    # ── Save final model ─────────────────────────────────────────────
+    #  Save final model ─
     torch.save(autoencoder.encoder.state_dict(), ARTIFACTS_DIR / "encoder.pt")
     torch.save(autoencoder.decoder.state_dict(), ARTIFACTS_DIR / "decoder.pt")
     torch.save({
@@ -365,9 +359,7 @@ def train_autoencoder(
     return autoencoder
 
 
-# ═══════════════════════════════════════════════════════════════════════════
 # 4. STRUCTURE RECOVERY
-# ═══════════════════════════════════════════════════════════════════════════
 
 def recover_structure(
     percentile_threshold: float = 90.0,
@@ -395,7 +387,7 @@ def recover_structure(
     print("STRUCTURE RECOVERY: Analyzing Thought-Agent Dependencies")
     print("=" * 60)
 
-    # ── Load trained autoencoder ─────────────────────────────────────
+    #  Load trained autoencoder 
     model_config = torch.load(ARTIFACTS_DIR / "model_config.pt",
                               weights_only=False)
     ae_config = torch.load(ARTIFACTS_DIR / "autoencoder_config.pt",
@@ -416,7 +408,7 @@ def recover_structure(
                     map_location=device))
     autoencoder.eval()
 
-    # ── Load training data ───────────────────────────────────────────
+    #  Load training data ─
     train_data = torch.load(ARTIFACTS_DIR / "hidden_states_train.pt",
                             weights_only=False)
     H_all = torch.stack([d["H_t"] for d in train_data]).float().to(device)
@@ -426,7 +418,7 @@ def recover_structure(
     h_std = h_norm["std"].to(device)
     H_normalized = (H_all - h_mean) / h_std
 
-    # ── Compute average absolute Jacobian across training set ────────
+    #  Compute average absolute Jacobian across training set 
     print(f"  Computing Jacobians for {len(train_data)} training cases...")
     print(f"  (This takes a few minutes — one full Jacobian per case)")
 
@@ -442,7 +434,7 @@ def recover_structure(
 
     J_avg = J_accumulated / len(H_normalized)
 
-    # ── Threshold to binary structure matrix ─────────────────────────
+    #  Threshold to binary structure matrix ─
     # B(J_f) from Eq. 3 in the paper
     threshold = torch.quantile(J_avg.flatten(),
                                percentile_threshold / 100.0)
@@ -455,12 +447,12 @@ def recover_structure(
     print(f"    Nonzero entries in B: {B.sum().item()} / {B.numel()} "
           f"({100 * B.float().mean():.1f}%)")
 
-    # ── Split by agent ───────────────────────────────────────────────
+    #  Split by agent ─
     # H_t = [H_vision (first d_model dims) ; H_text (last d_model dims)]
     B_vision = B[:hidden_size, :]          # [d_model, latent_dim]
     B_text = B[hidden_size:, :]            # [d_model, latent_dim]
 
-    # ── Classify each thought ────────────────────────────────────────
+    #  Classify each thought 
     # Eq. 4 from the paper: Z_{H_t^(k)} is the set of thoughts that
     # influence at least one component of agent k's hidden state.
     vision_mask = B_vision.any(dim=0)      # [latent_dim] boolean
@@ -475,17 +467,17 @@ def recover_structure(
     n_private_text = (text_mask & ~vision_mask).sum().item()
     n_unused = (agreement == 0).sum().item()
 
-    print(f"\n  ┌─────────────────────────────────────┐")
+    print(f"\n  ┌─┐")
     print(f"  │  THOUGHT STRUCTURE RECOVERY          │")
-    print(f"  ├─────────────────────────────────────┤")
+    print(f"  ├─┤")
     print(f"  │  Shared (both agents):    {n_shared:4d}       │")
     print(f"  │  Private vision only:     {n_private_vision:4d}       │")
     print(f"  │  Private text only:       {n_private_text:4d}       │")
     print(f"  │  Unused dimensions:       {n_unused:4d}       │")
     print(f"  │  Total latent dims:       {latent_dim:4d}       │")
-    print(f"  └─────────────────────────────────────┘")
+    print(f"  └─┘")
 
-    # ── Save structure mask ──────────────────────────────────────────
+    #  Save structure mask 
     structure = {
         "vision_mask": vision_mask.cpu(),    # [latent_dim] boolean
         "text_mask": text_mask.cpu(),        # [latent_dim] boolean
@@ -503,7 +495,7 @@ def recover_structure(
 
     print(f"\n✓ Structure mask saved to {ARTIFACTS_DIR / 'structure_mask.pt'}")
 
-    # ── W&B logging ──────────────────────────────────────────────────
+    #  W&B logging 
     if log_wandb:
         import wandb
         wandb.init(
@@ -528,9 +520,7 @@ def recover_structure(
     return structure
 
 
-# ═══════════════════════════════════════════════════════════════════════════
-# 5. MAIN — run Phase 1 + Structure Recovery together
-# ═══════════════════════════════════════════════════════════════════════════
+# 5. MAIN: run Phase 1 + Structure Recovery together
 
 def main():
     import argparse

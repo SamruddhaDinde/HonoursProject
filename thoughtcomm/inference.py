@@ -47,12 +47,12 @@ class ThoughtCommPipeline:
     def _load_all(self):
         """Load all trained components."""
 
-        # ── Model config ─────────────────────────────────────────────
+        #  Model config ─
         model_config = torch.load(
             self.artifacts_dir / "model_config.pt", weights_only=False)
         self.hidden_size = model_config["hidden_size"]
 
-        # ── Autoencoder config + encoder ─────────────────────────────
+        #  Autoencoder config + encoder ─
         ae_config = torch.load(
             self.artifacts_dir / "autoencoder_config.pt", weights_only=False)
         self.latent_dim = ae_config["latent_dim"]
@@ -67,13 +67,13 @@ class ThoughtCommPipeline:
         for p in self.autoencoder.parameters():
             p.requires_grad = False
 
-        # ── Normalization stats ──────────────────────────────────────
+        #  Normalization stats 
         h_norm = torch.load(
             self.artifacts_dir / "h_normalization.pt", weights_only=False)
         self.h_mean = h_norm["mean"].to(self.device).squeeze()
         self.h_std = h_norm["std"].to(self.device).squeeze()
 
-        # ── Structure mask ───────────────────────────────────────────
+        #  Structure mask ─
         structure = torch.load(
             self.artifacts_dir / "structure_mask.pt", weights_only=False)
         self.vision_mask = structure["vision_mask"]
@@ -85,7 +85,7 @@ class ThoughtCommPipeline:
               f"{structure['n_private_vision']} vision-private, "
               f"{structure['n_private_text']} text-private")
 
-        # ── Adapter ──────────────────────────────────────────────────
+        #  Adapter 
         adapter_config = torch.load(
             self.artifacts_dir / "adapter_config.pt", weights_only=False)
 
@@ -101,7 +101,7 @@ class ThoughtCommPipeline:
         for p in self.adapter.parameters():
             p.requires_grad = False
 
-        # ── Agreement weights ────────────────────────────────────────
+        #  Agreement weights 
         weights = torch.load(
             self.artifacts_dir / "agreement_weights.pt", weights_only=False)
         self.w_private = weights["w_private"].to(self.device)
@@ -111,7 +111,7 @@ class ThoughtCommPipeline:
               f"private={self.w_private.item():.3f}, "
               f"shared={self.w_shared.item():.3f}")
 
-        # ── MedGemma ─────────────────────────────────────────────────
+        #  MedGemma ─
         self.model, self.processor, _ = load_medgemma()
 
     def run_case(self, case: dict, format_vision_fn, format_text_fn,
@@ -144,9 +144,7 @@ class ThoughtCommPipeline:
         for round_num in range(num_rounds):
 
             if round_num == 0:
-                # ════════════════════════════════════════════════════
                 # ROUND 1: Initial responses (no ThoughtComm)
-                # ════════════════════════════════════════════════════
 
                 # Vision agent: image + diagnostic question
                 h_vision, vision_resp = extract_hidden_state(
@@ -166,11 +164,9 @@ class ThoughtCommPipeline:
                 text_responses.append(text_resp)
 
             else:
-                # ════════════════════════════════════════════════════
                 # ROUND 2+: ThoughtComm — extract, personalize, inject
-                # ════════════════════════════════════════════════════
 
-                # ── Thought Communication ────────────────────────
+                #  Thought Communication 
                 H_t = torch.cat([h_vision, h_text], dim=0).to(self.device)
                 H_norm = (H_t - self.h_mean) / self.h_std
 
@@ -193,7 +189,7 @@ class ThoughtCommPipeline:
                     prefix_vision = self.adapter(z_vision)  # [m, d_model]
                     prefix_text = self.adapter(z_text)      # [m, d_model]
 
-                # ── Construct round 2+ prompts ───────────────────
+                #  Construct round 2+ prompts ─
                 round_vision_prompt = (
                     f"{vision_prompt}\n\n"
                     f"Your previous assessment: {vision_responses[-1]}\n\n"
@@ -207,7 +203,7 @@ class ThoughtCommPipeline:
                     f"Provide your updated diagnosis."
                 )
 
-                # ── Generate with prefix injection ───────────────
+                #  Generate with prefix injection ─
                 vision_resp = generate_with_prefix(
                     self.model, self.processor,
                     text=round_vision_prompt,

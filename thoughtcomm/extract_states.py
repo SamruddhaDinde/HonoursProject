@@ -41,7 +41,7 @@ from data.loader import (
 from thoughtcomm.model_loader import load_medgemma, extract_hidden_state
 
 
-# ── Configuration ────────────────────────────────────────────────────────
+#  Configuration 
 ARTIFACTS_DIR = Path(os.getenv("THOUGHTCOMM_ARTIFACTS", "artifacts"))
 TRAIN_SPLIT = int(os.getenv("THOUGHTCOMM_TRAIN_SPLIT", "350"))
 SEED = 42  # MUST match your baseline runs for fair comparison
@@ -50,7 +50,7 @@ SEED = 42  # MUST match your baseline runs for fair comparison
 def main():
     ARTIFACTS_DIR.mkdir(parents=True, exist_ok=True)
 
-    # ── Load model ───────────────────────────────────────────────────
+    #  Load model ─
     print("=" * 60)
     print("PHASE 0: Hidden State Extraction")
     print("=" * 60)
@@ -60,7 +60,7 @@ def main():
     print(f"Hidden size (d_model): {hidden_size}")
     print(f"Concatenated H_t size: {2 * hidden_size}")
 
-    # ── Load dataset ─────────────────────────────────────────────────
+    #  Load dataset ─
     print(f"\nLoading ALL NEJM cases (seed={SEED})...")
     dataset = load_nejm(n_samples=None, seed=SEED)
     print(f"Loaded {len(dataset)} cases.")
@@ -71,14 +71,14 @@ def main():
             f"Reduce TRAIN_SPLIT or check dataset."
         )
 
-    # ── Extract hidden states ────────────────────────────────────────
+    #  Extract hidden states 
     all_data = []
     start_time = time.time()
 
     for i, case in enumerate(dataset):
         case_start = time.time()
 
-        # ── Vision Agent: sees image + diagnostic question only ──────
+        #  Vision Agent: sees image + diagnostic question only 
         vision_prompt = format_vision_question(case)
         h_vision, vision_response = extract_hidden_state(
             model, processor,
@@ -86,7 +86,7 @@ def main():
             image=case["image"],
         )
 
-        # ── Text Agent: sees full clinical context + question, no image ─
+        #  Text Agent: sees full clinical context + question, no image ─
         text_prompt = format_text_question(case)
         h_text, text_response = extract_hidden_state(
             model, processor,
@@ -94,7 +94,7 @@ def main():
             image=None,  # Text agent does NOT see the image
         )
 
-        # ── Concatenate: H_t = [H_vision ; H_text] ──────────────────
+        #  Concatenate: H_t = [H_vision ; H_text] 
         h_t = torch.cat([h_vision, h_text], dim=0)  # [2 * hidden_size]
 
         # Sanity checks
@@ -128,13 +128,13 @@ def main():
               f"ETA: {remaining/60:.0f}min | "
               f"H_t norm: {h_t.norm():.1f}")
 
-    # ── Split into train/test ────────────────────────────────────────
+    #  Split into train/test 
     train_data = all_data[:TRAIN_SPLIT]
     test_data = all_data[TRAIN_SPLIT:]
 
     print(f"\nSplit: {len(train_data)} train / {len(test_data)} test")
 
-    # ── Compute summary statistics ───────────────────────────────────
+    #  Compute summary statistics ─
     train_norms = torch.stack([d["H_t"] for d in train_data]).norm(dim=1)
     test_norms = torch.stack([d["H_t"] for d in test_data]).norm(dim=1)
 
@@ -151,7 +151,7 @@ def main():
         print("\n⚠ WARNING: Hidden state norms are very small. "
               "This may indicate a problem with hidden state extraction.")
 
-    # ── Save to disk ─────────────────────────────────────────────────
+    #  Save to disk ─
     torch.save(train_data, ARTIFACTS_DIR / "hidden_states_train.pt")
     torch.save(test_data, ARTIFACTS_DIR / "hidden_states_test.pt")
     torch.save(model_config, ARTIFACTS_DIR / "model_config.pt")
@@ -163,7 +163,6 @@ def main():
     print(f"  - hidden_states_test.pt  ({len(test_data)} cases)")
     print(f"  - model_config.pt        (hidden_size={hidden_size})")
 
-    # ── Optional: save a human-readable summary ──────────────────────
     summary = {
         "hidden_size": hidden_size,
         "n_train": len(train_data),

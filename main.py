@@ -37,14 +37,14 @@ from evaluation.evaluator import Evaluator
 
 load_dotenv()
 
-# ── Configuration ────────────────────────────────────────────────────────
+#  Configuration 
 
 COMMUNICATION_MODE = "output_only"
 SEED = 42
 TRAIN_SPLIT = 350  # must match ThoughtComm's split
 
 
-# ── Pipeline ─────────────────────────────────────────────────────────────
+#  Pipeline 
 
 async def run_pipeline(example: dict) -> tuple[str, str, str]:
     """
@@ -84,7 +84,7 @@ async def run_pipeline(example: dict) -> tuple[str, str, str]:
     result_vision = await Runner.run(vision_agent, vision_input)
     vision_output = result_vision.final_output
 
-    # --- Meta Agent (output-only: sees both final answers) ---
+    # Meta Agent (output-only: sees both final answers) 
     meta_input = format_meta_question(example, text_output, vision_output)
     result_meta = await Runner.run(meta_agent, meta_input)
     meta_output = result_meta.final_output
@@ -92,7 +92,7 @@ async def run_pipeline(example: dict) -> tuple[str, str, str]:
     return text_output, vision_output, meta_output
 
 
-# ── Main ─────────────────────────────────────────────────────────────────
+#  Main
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Output-only multi-agent NEJM evaluation")
@@ -121,7 +121,6 @@ async def main():
         dataset = all_cases
         split_label = f"all_{len(dataset)}"
 
-    # Override with --n if provided (for smoke tests)
     if args.n is not None:
         dataset = dataset[:args.n]
         split_label = f"{split_label}_n{args.n}"

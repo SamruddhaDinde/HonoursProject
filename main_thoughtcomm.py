@@ -37,16 +37,16 @@ from evaluation.evaluator import extract_answer, is_correct
 from thoughtcomm.inference import ThoughtCommPipeline
 
 
-# ── Configuration ────────────────────────────────────────────────────────
+#  Configuration 
 ARTIFACTS_DIR = os.getenv("THOUGHTCOMM_ARTIFACTS", "artifacts")
 TRAIN_SPLIT = int(os.getenv("THOUGHTCOMM_TRAIN_SPLIT", "350"))
 NUM_ROUNDS = int(os.getenv("THOUGHTCOMM_NUM_ROUNDS", "2"))
 SEED = 42
 
 
-# ═══════════════════════════════════════════════════════════════════════════
+
 # HEURISTICS — all evaluated on every case, logged separately
-# ═══════════════════════════════════════════════════════════════════════════
+
 
 def heuristic_trust_consistent(v_r1, v_r2, t_r1, t_r2):
     """Trust the agent that did NOT change its answer (original heuristic)."""
@@ -125,26 +125,26 @@ HEURISTICS = {
 }
 
 
-# ═══════════════════════════════════════════════════════════════════════════
+
 # MAIN
-# ═══════════════════════════════════════════════════════════════════════════
+
 
 def main():
     print("=" * 60)
     print("PHASE 3: ThoughtComm Inference on NEJM Test Set")
     print("=" * 60)
 
-    # ── Load test cases ──────────────────────────────────────────────
+    #  Load test cases 
     print(f"\nLoading dataset (seed={SEED})...")
     all_cases = load_nejm(n_samples=None, seed=SEED)
     test_cases = all_cases[TRAIN_SPLIT:]
     n_test = len(test_cases)
     print(f"Test set: {n_test} cases (indices {TRAIN_SPLIT}–{len(all_cases)-1})")
 
-    # ── Initialize ThoughtComm pipeline ──────────────────────────────
+    #  Initialize ThoughtComm pipeline 
     pipeline = ThoughtCommPipeline(ARTIFACTS_DIR)
 
-    # ── Initialize W&B ───────────────────────────────────────────────
+    #  Initialize W&B ─
     run = wandb.init(
         project="medical-multiagent",
         name=f"thoughtcomm_{NUM_ROUNDS}rounds_{n_test}cases_comprehensive",
@@ -168,7 +168,7 @@ def main():
         },
     )
 
-    # ── Comprehensive W&B table ──────────────────────────────────────
+    #  Comprehensive W&B table 
     columns = [
         # Case info
         "case_num",
@@ -210,7 +210,7 @@ def main():
 
     results_table = wandb.Table(columns=columns)
 
-    # ── Tracking counters ────────────────────────────────────────────
+    #  Tracking counters 
     heuristic_correct = {name: 0 for name in HEURISTICS}
     heuristic_correct_consensus = {name: 0 for name in HEURISTICS}
     heuristic_correct_disagree = {name: 0 for name in HEURISTICS}
@@ -233,7 +233,7 @@ def main():
     r2_consensus_total = 0
     r2_disagree_total = 0
 
-    # ── Run evaluation ───────────────────────────────────────────────
+    #  Run evaluation ─
     for i, case in enumerate(test_cases):
         print(f"\n[{i+1}/{n_test}] Case {case['image_id']:04d}")
 
@@ -244,7 +244,7 @@ def main():
             num_rounds=NUM_ROUNDS,
         )
 
-        # ── Parse all answers ────────────────────────────────────────
+        #  Parse all answers 
         vision_r1 = extract_answer(result["vision_responses"][0])
         text_r1 = extract_answer(result["text_responses"][0])
         vision_r2 = extract_answer(result["vision_responses"][-1])
@@ -253,7 +253,7 @@ def main():
 
         total += 1
 
-        # ── Individual agent correctness ─────────────────────────────
+        #  Individual agent correctness ─
         v_r1_correct = is_correct(vision_r1, ground_truth)
         t_r1_correct = is_correct(text_r1, ground_truth)
         v_r2_correct = is_correct(vision_r2, ground_truth)
@@ -264,7 +264,7 @@ def main():
         if v_r2_correct: vision_r2_correct_count += 1
         if t_r2_correct: text_r2_correct_count += 1
 
-        # ── Consensus tracking ───────────────────────────────────────
+        #  Consensus tracking ─
         r1_consensus = (vision_r1 == text_r1)
         r2_consensus = (vision_r2 == text_r2)
 
@@ -281,7 +281,7 @@ def main():
         else:
             r2_disagree_total += 1
 
-        # ── Change tracking ──────────────────────────────────────────
+        #  Change tracking 
         v_changed = (vision_r1 != vision_r2)
         t_changed = (text_r1 != text_r2)
 
@@ -308,7 +308,7 @@ def main():
         if t_change_dir == "wrong_to_right": text_improved_count += 1
         if t_change_dir == "right_to_wrong": text_degraded_count += 1
 
-        # ── Apply ALL heuristics ─────────────────────────────────────
+        #  Apply ALL heuristics ─
         heuristic_answers = {}
         heuristic_correctness = {}
         for name, func in HEURISTICS.items():
@@ -323,7 +323,7 @@ def main():
                 else:
                     heuristic_correct_disagree[name] += 1
 
-        # ── Build table row ──────────────────────────────────────────
+        #  Build table row 
         row = [
             i + 1,
             case["image_id"],
@@ -369,7 +369,7 @@ def main():
 
         results_table.add_data(*row)
 
-        # ── Per-step W&B logging (for live charts) ───────────────────
+        #  Per-step W&B logging (for live charts) ─
         step_log = {
             "step": i + 1,
             "running/vision_r1_accuracy": vision_r1_correct_count / total,
@@ -385,7 +385,7 @@ def main():
 
         wandb.log(step_log)
 
-        # ── Console output ───────────────────────────────────────────
+        #  Console output ─
         primary_answer = heuristic_answers["trust_consistent"]
         primary_correct = heuristic_correctness["trust_consistent"]
 
@@ -394,7 +394,7 @@ def main():
               f"GT: {ground_truth} | "
               f"{'✓' if primary_correct else '✗'}")
 
-    # ── Aggregate metrics ────────────────────────────────────────────
+    #  Aggregate metrics 
     print(f"\n{'='*60}")
     print(f"ThoughtComm Results Summary ({n_test} cases)")
     print(f"{'='*60}")
@@ -438,7 +438,7 @@ def main():
         acc = heuristic_correct[name] / total
         print(f"  {name:<25} {acc:>9.1%} {heuristic_correct[name]:>7}/{total}")
 
-    # ── W&B summary ──────────────────────────────────────────────────
+    #  W&B summary 
     summary = {
         "results_table": results_table,
         "final/vision_r1_accuracy": vision_r1_correct_count / total,

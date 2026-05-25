@@ -48,7 +48,7 @@ import wandb
 
 load_dotenv()
 
-# ── Configuration ────────────────────────────────────────────────────────
+#  Configuration 
 
 COMMUNICATION_MODE = "structured_json"
 SEED = 42
@@ -56,7 +56,7 @@ TRAIN_SPLIT = 350
 MAX_RETRIES = 1  # one retry on JSON parse failure
 
 
-# ── Pipeline ─────────────────────────────────────────────────────────────
+#  Pipeline ─
 
 async def get_structured_output(agent, prompt, agent_name: str, is_vision: bool = False,
                                  image_b64: str = None) -> tuple[dict, str, str, int]:
@@ -129,20 +129,20 @@ async def run_structured_pipeline(example: dict) -> dict:
 
     base64_image = image_to_base64(example["image"])
 
-    # ── Text agent (structured JSON output) ───────────────────────────
+    #  Text agent (structured JSON output) ─
     text_prompt = format_text_question_structured(example)
     text_json, text_raw, text_status, text_attempts = await get_structured_output(
         text_agent, text_prompt, "text"
     )
 
-    # ── Vision agent (structured JSON output) ─────────────────────────
+    #  Vision agent (structured JSON output) ─
     vision_prompt = format_vision_question_structured(example)
     vision_json, vision_raw, vision_status, vision_attempts = await get_structured_output(
         vision_agent, vision_prompt, "vision",
         is_vision=True, image_b64=base64_image
     )
 
-    # ── Meta agent (receives structured data, constrained options) ────
+    #  Meta agent (receives structured data, constrained options) 
     meta_input = format_meta_question_structured(example, text_json, vision_json)
     result_meta = await Runner.run(meta_agent, meta_input)
     meta_output = result_meta.final_output
@@ -160,7 +160,7 @@ async def run_structured_pipeline(example: dict) -> dict:
     }
 
 
-# ── Main ─────────────────────────────────────────────────────────────────
+#  Main ─
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Mode 3: Structured JSON on NEJM")
@@ -194,7 +194,7 @@ async def main():
     print(f"Running {COMMUNICATION_MODE} on {n_cases} NEJM cases "
           f"(split={args.split}, seed={args.seed})")
 
-    # ── W&B init ──────────────────────────────────────────────────────
+    #  W&B init 
 
     run = wandb.init(
         project="medical-multiagent",
@@ -215,7 +215,7 @@ async def main():
         }
     )
 
-    # ── Table schema ──────────────────────────────────────────────────
+    #  Table schema 
 
     table = wandb.Table(columns=[
         "image_id",
@@ -262,7 +262,7 @@ async def main():
         "running_vision_accuracy",
     ])
 
-    # ── Counters ──────────────────────────────────────────────────────
+    #  Counters 
 
     total = 0
     meta_correct_count = 0
@@ -290,7 +290,7 @@ async def main():
     agree_total = 0
     agree_meta_correct = 0
 
-    # ── Run evaluation ────────────────────────────────────────────────
+    #  Run evaluation 
 
     for i, case in enumerate(dataset):
         print(f"\n[{i+1}/{n_cases}] Case {case['image_id']:04d}: "
@@ -424,7 +424,7 @@ async def main():
               f"{'AGREE' if agents_agree else 'DISAGREE'} | "
               f"Meta: {meta_ans}({'ok' if meta_ok else 'x'}) | GT: {ground_truth}")
 
-    # ── Summary ───────────────────────────────────────────────────────
+    #  Summary ─
 
     print(f"\n{'='*60}")
     print(f"Mode 3 (Structured JSON) Results — {total} cases")
@@ -461,7 +461,7 @@ async def main():
     print(f"    Vision agent: {vision_parse_counts}")
     print(f"    Total retries needed: {total_retries}")
 
-    # ── W&B summary ──────────────────────────────────────────────────
+    #  W&B summary 
 
     summary = {
         "results_table": table,

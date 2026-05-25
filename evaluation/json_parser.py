@@ -16,7 +16,7 @@ import re
 from typing import Optional
 
 
-# ── Default schema (what we expect from specialists) ─────────────────────
+#  Default schema (what we expect from specialists) ─
 
 SPECIALIST_SCHEMA = {
     "answer": "?",
@@ -97,7 +97,7 @@ Do not include any text outside the JSON object. No markdown backticks.
 }}"""
 
 
-# ── Internal helpers ─────────────────────────────────────────────────────
+#  Internal helpers ─
 
 def _strip_fences(text: str) -> str:
     """Remove markdown code fences and common preamble patterns."""
