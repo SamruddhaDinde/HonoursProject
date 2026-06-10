@@ -21,6 +21,11 @@ wandb/
 
 dataset/images
 
+corpus/
+
+rag_index/
+medrag_tools/
+
 
 
 *.sif

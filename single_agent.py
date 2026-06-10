@@ -16,7 +16,7 @@ load_dotenv()
 N_SAMPLES = 689
 SEED = 42
 CONDITION = "single_agent_baseline"
-MODEL_NAME = "medgemma1.5:4b"  
+MODEL_NAME = "qwen2.5vl:7b"  
 
 
 async def run_pipeline(example: dict) -> str:

@@ -19,7 +19,7 @@ ANSWER: <single letter A-E>
 REASONING: <how the clinical history and image findings together support your choice, 2-3 sentences>
 """,
     model=OpenAIChatCompletionsModel(
-        model="medgemma1.5:4b",   
+        model="qwen2.5vl:7b",   
         openai_client=ollama_client
     )
 )

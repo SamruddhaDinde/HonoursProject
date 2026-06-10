@@ -109,11 +109,15 @@ def load_nejm_split(split: str = "all", seed: int = 42, train_n: int = 350):
         return all_cases
     
 
-def image_to_base64(image: Image.Image) -> str:
-    """Convert a PIL image to a base64-encoded JPEG string for vision input."""
-    buffer = BytesIO()
-    image.save(buffer, format="JPEG")
-    return base64.b64encode(buffer.getvalue()).decode("utf-8")
+# def image_to_base64(image: Image.Image) -> str:
+#     """Convert a PIL image to a base64-encoded JPEG string for vision input."""
+#     buffer = BytesIO()
+#     image.save(buffer, format="JPEG", quality=95, subsampling=0)
+#     return base64.b64encode(buffer.getvalue()).decode("utf-8")
+
+def jpeg_file_to_base64(image_path: str) -> str:
+    image_bytes = Path(image_path).read_bytes()
+    return base64.b64encode(image_bytes).decode("utf-8")
 
 import re
 

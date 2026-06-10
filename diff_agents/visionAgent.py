@@ -22,7 +22,7 @@ ANSWER: <single letter A-E>
 REASONING: <what you observed in the image and how it supports your choice, 2-3 sentences>
 """,
     model= OpenAIChatCompletionsModel(
-        model = "medgemma1.5:4b",
+        model = "qwen2.5vl:7b",
         openai_client=ollama_client
     )
 )
