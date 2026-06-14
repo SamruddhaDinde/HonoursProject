@@ -1,0 +1,7 @@
+experiment,agree_n,agree_accuracy,disagree_n,disagree_accuracy,agreement_rate
+lg_conditional_debate_689,126,50.0,563,51.15,18.3
+lg_option_ranking_689,102,60.78,587,49.06,14.8
+mode1_cot_689,246,58.13,443,31.38,35.7
+mode1_qwen_vision_689,197,56.85,492,33.13,28.6
+mode3_structured_689,214,57.48,472,39.19,31.2
+rag_text_689,217,51.61,472,30.3,31.5

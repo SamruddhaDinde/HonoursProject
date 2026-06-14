@@ -1,0 +1,14 @@
+experiment,correlation_with_public,n
+lg_conditional_debate_689,0.2531,689
+lg_conservative_689,0.2155,689
+lg_describe_fuse_689,0.2043,689
+lg_directed_debate_689,0.2072,689
+lg_option_ranking_689,0.1959,689
+mode1_cot_689,0.2094,689
+mode1_qwen_vision_689,0.1535,689
+mode2_debate_689,0.2649,689
+mode3_structured_689,0.2117,686
+mode3b_structured_debate_689,0.2457,689
+rag_text_689,0.1611,689
+Single_Agent_MedGemma-1.5-4B_689cases,0.2213,689
+Single_Agent_Qwen2.5VL-7B_689cases,0.2892,689

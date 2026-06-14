@@ -1,0 +1,7 @@
+experiment,easy,medium,hard,all
+lg_conditional_debate_689,75.94,52.93,18.18,55.15
+lg_option_ranking_689,70.68,62.7,31.82,62.26
+mode1_cot_689,79.7,61.52,29.55,62.99
+mode1_qwen_vision_689,76.69,66.41,20.45,65.46
+mode3_structured_689,76.69,65.03,31.82,65.16
+rag_text_689,75.19,57.81,27.27,59.22
