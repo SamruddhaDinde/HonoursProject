@@ -33,9 +33,9 @@ from collections import defaultdict
 import pandas as pd
 import numpy as np
 
-# ──────────────────────────────────────────────────────────────────────
+
 # 1. LOAD THE NEJM DATASET
-# ──────────────────────────────────────────────────────────────────────
+
 
 def parse_int(value, default=0):
     """Safely parse integers from messy dataset fields.
@@ -208,9 +208,9 @@ def load_dataset(path):
     return df
 
 
-# ──────────────────────────────────────────────────────────────────────
+
 # 2. LOAD W&B EXPERIMENT TABLES
-# ──────────────────────────────────────────────────────────────────────
+
 
 def load_experiment_csv(csv_path, experiment_name):
     """Load a single W&B export CSV. Expects at minimum: image_id, ground_truth, and some answer columns."""
@@ -263,9 +263,9 @@ def load_all_experiments(wandb_dir):
     return experiments
 
 
-# ──────────────────────────────────────────────────────────────────────
+
 # 3. DIFFICULTY STRATIFICATION
-# ──────────────────────────────────────────────────────────────────────
+
 
 def difficulty_stratification(dataset_df, experiments):
     """Compute per-experiment accuracy broken down by difficulty tier."""
@@ -313,9 +313,9 @@ def difficulty_stratification(dataset_df, experiments):
     return result_df
 
 
-# ──────────────────────────────────────────────────────────────────────
+
 # 4. ORACLE CEILING PER DIFFICULTY TIER
-# ──────────────────────────────────────────────────────────────────────
+
 
 def oracle_by_difficulty(dataset_df, experiments):
     """Compute oracle ceiling (at least one specialist correct) per difficulty tier.
@@ -356,9 +356,9 @@ def oracle_by_difficulty(dataset_df, experiments):
     return result_df
 
 
-# ──────────────────────────────────────────────────────────────────────
+
 # 5. CROSS-EXPERIMENT PER-CASE CONSISTENCY
-# ──────────────────────────────────────────────────────────────────────
+
 
 def cross_experiment_consistency(experiments):
     """For each case, count how many experiments got it right. Identifies
@@ -414,9 +414,9 @@ def cross_experiment_consistency(experiments):
     return matrix
 
 
-# ──────────────────────────────────────────────────────────────────────
+
 # 6. PUBLIC VOTE CORRELATION
-# ──────────────────────────────────────────────────────────────────────
+
 
 def public_vote_correlation(dataset_df, experiments):
     """Correlate public correctness rate with each experiment's per-case accuracy."""
@@ -443,9 +443,9 @@ def public_vote_correlation(dataset_df, experiments):
     return result_df
 
 
-# ──────────────────────────────────────────────────────────────────────
+
 # 7. CONFIDENCE CALIBRATION
-# ──────────────────────────────────────────────────────────────────────
+
 
 def confidence_calibration(experiments):
     """For experiments with confidence columns, bucket by confidence and compute
@@ -504,9 +504,9 @@ def confidence_calibration(experiments):
     print()
 
 
-# ──────────────────────────────────────────────────────────────────────
+
 # 8. FULL TRANSITION MATRICES
-# ──────────────────────────────────────────────────────────────────────
+
 
 def transition_matrices(experiments):
     """For experiments with text_initial and final_answer, compute the full
@@ -562,9 +562,9 @@ def transition_matrices(experiments):
     print()
 
 
-# ──────────────────────────────────────────────────────────────────────
+
 # 9. AGREEMENT-CONDITIONED ACCURACY (UNIFIED)
-# ──────────────────────────────────────────────────────────────────────
+
 
 def agreement_analysis(experiments):
     """Compute accuracy when agents agree vs disagree, across all experiments
@@ -619,9 +619,9 @@ def agreement_analysis(experiments):
     return result_df
 
 
-# ──────────────────────────────────────────────────────────────────────
+
 # BONUS: PULL TABLES FROM W&B API (if CSVs not yet exported)
-# ──────────────────────────────────────────────────────────────────────
+
 
 def pull_from_wandb_api(entity, project, output_dir="wandb_exports"):
     """Pull all results_table artifacts from a W&B project as CSVs.
@@ -656,9 +656,9 @@ def pull_from_wandb_api(entity, project, output_dir="wandb_exports"):
     print(f"\nExported to {output_dir}/. Use --wandb-dir {output_dir} to analyse.")
 
 
-# ──────────────────────────────────────────────────────────────────────
+
 # MAIN
-# ──────────────────────────────────────────────────────────────────────
+
 
 def main():
     parser = argparse.ArgumentParser(description="Comprehensive thesis data analysis")
