@@ -4,15 +4,6 @@ RAG Retriever — Medical knowledge retrieval from StatPearls index.
 Provides a simple retrieve() function that takes a clinical case text
 and returns the top-k most relevant medical textbook passages.
 
-Usage:
-    from rag.retriever import MedicalRetriever
-
-    retriever = MedicalRetriever()  # loads index from disk
-    passages = retriever.retrieve("67-year-old with renal transplant...", top_k=3)
-    # Returns list of strings (passage texts)
-
-Place this file at: /workspace/rag/retriever.py
-Also create an empty /workspace/rag/__init__.py
 """
 
 import os
@@ -25,7 +16,7 @@ from llama_index.vector_stores.chroma import ChromaVectorStore
 import chromadb
 
 
-# ── Configuration ────────────────────────────────────────────────────────
+#  Configuration 
 
 INDEX_DIR = Path(os.getenv("RAG_INDEX_DIR", "/workspace/rag_index"))
 COLLECTION_NAME = "statpearls_medical"

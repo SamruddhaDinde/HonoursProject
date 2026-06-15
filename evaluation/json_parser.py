@@ -8,7 +8,6 @@ Handles the common failure modes of LLM-generated JSON:
   - Missing or extra commas
   - Single retry on parse failure with a corrective prompt
 
-Place this file at: /workspace/evaluation/json_parser.py
 """
 
 import json

@@ -2,7 +2,6 @@
 PHASE 3: ThoughtComm Evaluation on NEJM Test Set
 
 Runs the full ThoughtComm pipeline on the test set and logs results to W&B.
-This is the counterpart to your existing main.py (baseline with Ollama).
 
 COMPREHENSIVE LOGGING:
   - Every agent answer at every round logged as separate W&B columns

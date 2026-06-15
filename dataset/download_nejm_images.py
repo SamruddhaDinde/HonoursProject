@@ -5,11 +5,6 @@ NEJM Image Challenge - Bulk Image Downloader
 Reads the case JSON, fetches each image from NEJM's public image CDN,
 and saves it under ./images/{image_id}.jpg.
 
-Place this script next to the JSON file:
-    dataset/
-    ├── image_challenge_dataset_20231223.json
-    ├── download_nejm_images.py   <-- this file
-    └── images/                   <-- created automatically
 
 Run:
     python download_nejm_images.py
@@ -28,7 +23,7 @@ from PIL import Image
 from tqdm import tqdm
 
 
-# --- Configuration -----------------------------------------------------------
+# Configuration 
 
 SCRIPT_DIR = Path(__file__).parent.resolve()
 JSON_PATH = SCRIPT_DIR / "image_challenge_dataset_20231223.json"
@@ -37,12 +32,12 @@ FAILURE_LOG = SCRIPT_DIR / "download_failures.log"
 
 URL_TEMPLATE = "https://csvc.nejm.org/ContentServer/images?id=IC{date}"
 
-REQUEST_TIMEOUT = 30           # seconds per request
-DELAY_BETWEEN_REQUESTS = 1.0   # politeness delay (s)
+REQUEST_TIMEOUT = 30       
+DELAY_BETWEEN_REQUESTS = 1.0  
 MAX_RETRIES = 3
-RETRY_BACKOFF_BASE = 2.0       # exponential: 2s, 4s, 8s
+RETRY_BACKOFF_BASE = 2.0      
 
-# Identifying ourselves is good etiquette and helps if NEJM ever logs traffic
+
 HEADERS = {
     "User-Agent": (
         "Academic research script (Honours thesis, multimodal medical VQA). "
@@ -52,7 +47,7 @@ HEADERS = {
 }
 
 
-# --- Helpers -----------------------------------------------------------------
+# Helpers
 
 def parse_date(date_str: str) -> str:
     """Convert 'apr-01-2021' -> '20210401'.
@@ -116,7 +111,7 @@ def download_one(url: str, dest: Path) -> tuple[bool, str]:
     return False, "Max retries exceeded"
 
 
-# --- Main --------------------------------------------------------------------
+# Main 
 
 def main():
     if not JSON_PATH.exists():
@@ -178,9 +173,9 @@ def main():
             f.write("\n".join(failures) + "\n")
         print(f"\nFailure details written to: {FAILURE_LOG}")
 
-    print("\n" + "=" * 50)
+
     print("Summary")
-    print("=" * 50)
+
     print(f"  Downloaded this run : {stats['downloaded']}")
     print(f"  Skipped (already on disk): {stats['skipped']}")
     print(f"  Failed              : {stats['failed']}")

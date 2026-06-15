@@ -4,7 +4,7 @@ NEJM Image Challenge dataset loader.
 Loads cases from the local cx0/nejm-image-challenge JSON, filters to those
 with substantive clinical context, and pairs them with locally cached images.
 
-Expected layout (paths shown inside the Singularity container):
+Expected layout :
     /workspace/dataset/
     ├── image_challenge_dataset_20231223.json
     └── images/
@@ -33,8 +33,7 @@ JSON_PATH = DATASET_DIR / "image_challenge_dataset_20231223.json"
 IMAGES_DIR = DATASET_DIR / "images"
 
 
-# --- Public API --------------------------------------------------------------
-
+#  Public API 
 def load_nejm(n_samples: int = None, seed: int = 42, require_image: bool = True):
     """
     Load NEJM Image Challenge cases with rich clinical context.
@@ -385,7 +384,7 @@ Based solely on these revised assessments, choose the most likely diagnosis.
 Respond in this exact format:
 ANSWER: <single letter A-E>
 REASONING: <why you chose this answer based on the specialists' revised input, 2-3 sentences>"""
-# --- Internals ---------------------------------------------------------------
+# Internals 
 
 def _to_example(case: dict) -> dict:
     """Convert a raw NEJM JSON case to the pipeline's example format."""

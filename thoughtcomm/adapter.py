@@ -173,7 +173,7 @@ def train_adapter(
     print("PHASE 2: Training Prefix Adapter")
     print("=" * 60)
 
-    # ── Load everything ──────────────────────────────────────────────
+    #  Load everything 
     model_config = torch.load(ARTIFACTS_DIR / "model_config.pt",
                               weights_only=False)
     ae_config = torch.load(ARTIFACTS_DIR / "autoencoder_config.pt",
@@ -201,7 +201,7 @@ def train_adapter(
     print(f"  Prefix length: {prefix_length}")
     print(f"  Training samples: {len(train_data)}")
 
-    # ── Load encoder (FROZEN) ────────────────────────────────────────
+    #  Load encoder (FROZEN) 
     from thoughtcomm.autoencoder import ThoughtAutoencoder
     autoencoder = ThoughtAutoencoder(input_dim, latent_dim).to(device)
     autoencoder.encoder.load_state_dict(
@@ -211,7 +211,7 @@ def train_adapter(
     for p in autoencoder.parameters():
         p.requires_grad = False
 
-    # ── Load MedGemma (FROZEN) ───────────────────────────────────────
+    #  Load MedGemma (FROZEN) ─
     print("  Loading MedGemma for adapter training...")
     from thoughtcomm.model_loader import load_medgemma
     model, processor, _ = load_medgemma()
@@ -234,7 +234,7 @@ def train_adapter(
     print(f"  Trainable: adapter ({adapter_params:,}) + 2 agreement weights")
     print(f"  Frozen: encoder + MedGemma (all weights)")
 
-    # ── W&B setup ────────────────────────────────────────────────────
+    #  W&B setup 
     if log_wandb:
         import wandb
         wandb.init(

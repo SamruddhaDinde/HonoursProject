@@ -116,9 +116,9 @@ def _parse_vision_gate_json(raw: str, options: dict):
     return ans, conf, description, reasoning, normalized_support
 
 
-# ─────────────────────────────────────────────────────────────────────────────
+
 # Text initial: vignette + options, no image
-# ─────────────────────────────────────────────────────────────────────────────
+
 
 TEXT_INITIAL_SYSTEM = (
     "You are an experienced clinician answering a diagnostic multiple-choice "
@@ -170,9 +170,9 @@ Ask 0-3 visual questions."""
     }
 
 
-# ─────────────────────────────────────────────────────────────────────────────
+
 # Vision gate: image + options, no vignette
-# ─────────────────────────────────────────────────────────────────────────────
+
 
 VISION_GATE_SYSTEM = (
     "You are a medical imaging specialist. You will see a medical image and a "
@@ -226,9 +226,9 @@ Respond ONLY with JSON, no markdown:
     }
 
 
-# ─────────────────────────────────────────────────────────────────────────────
+
 # Agreement checker: deterministic routing decision
-# ─────────────────────────────────────────────────────────────────────────────
+
 
 
 def agreement_check_node(state):
@@ -271,9 +271,9 @@ def agreement_check_node(state):
     }
 
 
-# ─────────────────────────────────────────────────────────────────────────────
+
 # Direct final: no extra model call
-# ─────────────────────────────────────────────────────────────────────────────
+
 
 
 def direct_final_node(state):
@@ -301,9 +301,9 @@ def direct_final_node(state):
     }
 
 
-# ─────────────────────────────────────────────────────────────────────────────
+
 # Debate: vision answers text agent's questions
-# ─────────────────────────────────────────────────────────────────────────────
+
 
 VISION_QUERY_SYSTEM = (
     "You are a medical imaging specialist. A clinician will ask specific "
@@ -345,9 +345,9 @@ def vision_query_node(state):
     }
 
 
-# ─────────────────────────────────────────────────────────────────────────────
+
 # Debate: text revises after visual answer
-# ─────────────────────────────────────────────────────────────────────────────
+
 
 TEXT_REVISE_SYSTEM = (
     "You are the same clinician. The radiologist has answered your visual "
@@ -404,9 +404,9 @@ Respond ONLY with JSON, no markdown:
     }
 
 
-# ─────────────────────────────────────────────────────────────────────────────
+
 # Final orchestrator after debate only
-# ─────────────────────────────────────────────────────────────────────────────
+
 
 ORCH_SYSTEM = (
     "You are the senior physician making the final diagnostic decision. You have "

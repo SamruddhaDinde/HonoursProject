@@ -54,12 +54,12 @@ async def run_pipeline(example: dict) -> tuple[str, str, str]:
     - Meta agent sees both final outputs + original case + options
     """
 
-    # --- Text Agent (no image) ---
+    #  Text Agent (no image) 
     text_question = format_text_question(example)
     result_text = await Runner.run(text_agent, text_question)
     text_output = result_text.final_output
 
-    # --- Vision Agent (image + question only) ---
+    #  Vision Agent (image + question only) 
     base64_image = image_to_base64(example["image"])
     vision_question = format_vision_question(example)
 
